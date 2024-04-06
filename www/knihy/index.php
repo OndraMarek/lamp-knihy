@@ -5,6 +5,21 @@ require 'database.php';
 
 $conn = Connection();
 
+$orderBy = $_GET['orderBy'] ?? 'kniha_nazev';
+$orderDir = $_GET['orderDir'] ?? 'ASC';
+$search = $_POST['search'] ?? '1';
+$searchBy = $_POST['searchBy'] ?? '1';
+
+$validOrderByColumns = ['kniha_nazev', 'kniha_isbn', 'autori', 'kniha_vydavatel', 'zanry', 'kniha_rok', 'kniha_pocet'];
+if (!in_array($orderBy, $validOrderByColumns)) {
+  $orderBy = 'kniha_nazev';
+}
+
+$validOrderDirs = ['ASC', 'DESC'];
+if (!in_array($orderDir, $validOrderDirs)) {
+  $orderDir = 'ASC';
+}
+
 $sql = "SELECT 
             k.kniha_nazev, 
             k.kniha_isbn, 
@@ -24,8 +39,11 @@ $sql = "SELECT
             kniha_zanr kz ON k.kniha_id = kz.kniha_id 
         LEFT JOIN 
             zanr z ON kz.zanr_id = z.zanr_id 
+        WHERE 
+            $searchBy LIKE '%$search%'
         GROUP BY 
-            k.kniha_id";
+            k.kniha_id 
+        ORDER BY $orderBy $orderDir";
 
 $result = $conn->query($sql);
 ?>
@@ -51,12 +69,47 @@ $result = $conn->query($sql);
         </div>
     </header>
     <main>
-        <div class="list-container">
+        <div class="container">
+        <form class="row mb-4" method="POST" action="index.php">
+            <div class="col-3">
+                <label for="search" class="mt-3 form-label">Slovo</label>
+                <input type="text" class="form-control" id="search" name="search">
+            </div>
+            <div class="col-3">
+                <label for="search" class="mt-3 form-label">Hleda podle</label>
+                <select class="form-select" name="searchBy">
+                    <option value="kniha_nazev">Název knihy</option>
+                    <option value="kniha_isbn">ISBN</option>
+                    <option value="autor_jmeno||autor_prijmeni">Autoři</option>
+                    <option value="kniha_vydavatel">Vydavatel</option>
+                    <option value="zanr_nazev">Žánry</option>
+                </select>
+            </div>
+            <div class="col-3">
+                <button type="submit" class="btn btn-primary mt-5">Hledat</button>
+            </div>
+        </form>
+
             <?php
             if ($result->num_rows > 0) {
-                echo "<ul class='list-group'>";
+                ?>
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                        <?php
+                            $orderDir = $orderDir == 'ASC' ? 'DESC' : 'ASC';
+                        ?>
+                            <th><a href="?orderBy=kniha_nazev&orderDir=<?=$orderDir?>">Název</a></th>
+                            <th><a href="?orderBy=kniha_isbn&orderDir=<?=$orderDir?>">ISBN</a></th>
+                            <th><a href="?orderBy=autori&orderDir=<?=$orderDir?>">Autoři</a></th>
+                            <th><a href="?orderBy=kniha_vydavatel&orderDir=<?=$orderDir?>">Vydavatel</a></th>
+                            <th><a href="?orderBy=zanry&orderDir=<?=$orderDir?>">Žánry</a></th>
+                            <th><a href="?orderBy=kniha_rok&orderDir=<?=$orderDir?>">Rok vydání</a></th>
+                            <th><a href="?orderBy=kniha_pocet&orderDir=<?=$orderDir?>">Počet</a></th>
+                        </tr>
+                    </thead>
+                <?php
                 while($row = $result->fetch_assoc()) {
-                    echo "<li class='list-group-item'>";
                     $nazev = $row["kniha_nazev"];
                     $isbn = $row["kniha_isbn"];
                     $rok = $row["kniha_rok"];
@@ -65,28 +118,23 @@ $result = $conn->query($sql);
                     $popis = $row["kniha_popis"];
                     $autori = $row["autori"];
                     $zanry = $row["zanry"];
-                    echo "<div class='row'>";
-                    echo "<div class='col-md-8'>";
-                    echo "<h4>$nazev</h4>";
-                    echo "<span class='isbn'>$isbn</span>";
-                    echo "|";
-                    echo "<span class='genre'>$zanry</span>";
-                    echo "<p class='mb-0'>Autor/ři: <b>$autori</b></p>";
-                    echo "<p class='mb-0'>Vydavatel: <b>$vydavatel</b></p>";
-                    echo "</div>";
-                    echo "<div class='col-md-4'>";
-                    echo "<button class='mt-5 btn btn-primary'>Detail</button>";
-                    echo "</div>";
-                    echo "<div class='col-md-8'>";         
-                    echo "<span class='year'>Rok vydání: $rok</span>";
-                    echo "|";
-                    echo "<span class='pages'>Počet stránek: $pocet</span>";
-                    echo "<p class='mb-0'>Popis: $popis</p>";
-                    echo "</div>";
-                    echo "</div>";
-                    echo "</li>";
+                ?>
+                    <tbody>
+                            <tr>
+                            <td><?= $nazev ?></td>
+                            <td><?= $isbn ?></td>
+                            <td><?= $autori ?></td>
+                            <td><?= $vydavatel ?></td>
+                            <td><?= $zanry ?></td>
+                            <td><?= $rok ?></td>
+                            <td><?= $pocet ?></td>
+                            </tr>
+                        </tbody>
+                    <?php
                 }
-                echo "</ul>";
+                    ?>
+                </table>
+            <?php
             } else {
                 echo "<p>Žádné knihy nebyly nalezeny.</p>";
             }
