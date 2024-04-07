@@ -93,6 +93,7 @@ $result = $conn->query($sql);
             <?php
             if ($result->num_rows > 0) {
                 ?>
+                <form> 
                 <table class="table table-striped table-hover">
                     <thead>
                         <tr>
@@ -104,10 +105,11 @@ $result = $conn->query($sql);
                             <th><a href="?orderBy=autori&orderDir=<?=$orderDir?>">Autoři</a></th>
                             <th><a href="?orderBy=kniha_vydavatel&orderDir=<?=$orderDir?>">Vydavatel</a></th>
                             <th><a href="?orderBy=zanry&orderDir=<?=$orderDir?>">Žánry</a></th>
-                            <th><a href="?orderBy=kniha_rok&orderDir=<?=$orderDir?>">Rok vydání</a></th>
-                            <th><a href="?orderBy=kniha_pocet&orderDir=<?=$orderDir?>">Počet</a></th>
+                            <th class="col-1"><a href="?orderBy=kniha_rok&orderDir=<?=$orderDir?>">Rok vydání</a></th>
+                            <th class="col-1"><a href="?orderBy=kniha_pocet&orderDir=<?=$orderDir?>">Počet</a></th>
                         </tr>
                     </thead>
+                    <tbody>
                 <?php
                 while($row = $result->fetch_assoc()) {
                     $nazev = $row["kniha_nazev"];
@@ -119,8 +121,7 @@ $result = $conn->query($sql);
                     $autori = $row["autori"];
                     $zanry = $row["zanry"];
                 ?>
-                    <tbody>
-                            <tr>
+                        <tr>
                             <td><?= $nazev ?></td>
                             <td><?= $isbn ?></td>
                             <td><?= $autori ?></td>
@@ -128,12 +129,25 @@ $result = $conn->query($sql);
                             <td><?= $zanry ?></td>
                             <td><?= $rok ?></td>
                             <td><?= $pocet ?></td>
-                            </tr>
-                        </tbody>
+                        </tr>
                     <?php
                 }
                     ?>
+                        <tr>      
+                            <td><input type="text" class="form-control" id="nazev" name="nazev"></td>
+                            <td><input type="text" class="form-control" id="nazev" name="nazev"></td>
+                            <td><input type="text" class="form-control" id="nazev" name="nazev"></td>
+                            <td><input type="text" class="form-control" id="nazev" name="nazev"></td>
+                            <td><input type="text" class="form-control" id="nazev" name="nazev"></td>
+                            <td><input type="number" class="form-control" id="nazev" name="nazev"></td>
+                            <td><input type="number" class="form-control" id="nazev" name="nazev"></td>
+                        </tr>
+                    </tbody>
                 </table>
+                <div class="text-end">
+                    <button type="submit" class="btn btn-success">Přidat</button>
+                </div>
+                </form>
             <?php
             } else {
                 echo "<p>Žádné knihy nebyly nalezeny.</p>";
