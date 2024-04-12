@@ -7,8 +7,8 @@ $conn = Connection();
 
 $orderBy = $_GET['orderBy'] ?? 'kniha_nazev';
 $orderDir = $_GET['orderDir'] ?? 'ASC';
-$search = $_POST['search'] ?? '1';
-$searchBy = $_POST['searchBy'] ?? '1';
+$search = $_GET['search'] ?? '1';
+$searchBy = $_GET['searchBy'] ?? '1';
 
 $validOrderByColumns = ['kniha_nazev', 'kniha_isbn', 'autori', 'kniha_vydavatel', 'zanry', 'kniha_rok', 'kniha_pocet'];
 if (!in_array($orderBy, $validOrderByColumns)) {
@@ -58,40 +58,46 @@ $genresResult = $conn->query("SELECT zanr_id, zanr_nazev FROM zanr");
 if (!$genresResult) {
     die('Error: ' . $conn->error);
 }
+$message = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $nazev = $_POST['nazev'];
-    $isbn = $_POST['isbn'];
-    $autori = $_POST['autor'];
-    $vydavatel = $_POST['vydavatel'];
-    $zanry = $_POST['zanr'];
-    $rok = $_POST['rok'];
-    $pocet = $_POST['pocet'];
-
-    $stmtBook = $conn->prepare("INSERT INTO kniha (kniha_nazev, kniha_isbn, kniha_vydavatel, kniha_rok, kniha_pocet) VALUES (?, ?, ?, ?, ?)");
-    $stmtBook->bind_param("sssis", $nazev, $isbn, $vydavatel, $rok, $pocet);
-    $stmtBook->execute();
-
-    $kniha_id = $conn->insert_id;
-
-    $stmtAuthor = $conn->prepare("INSERT INTO kniha_autor (kniha_id, autor_id) VALUES (?, ?)");
-    foreach ($autori as $autor_id) {
-        $stmtAuthor->bind_param("ii", $kniha_id, $autor_id);
-        $stmtAuthor->execute();
+    if (empty($_POST['nazev']) || empty($_POST['isbn']) || empty($_POST['vydavatel']) || empty($_POST['rok']) || empty($_POST['pocet'])) {
+        $message =  "Vyplňte všechny pole";
     }
+    else{
+        $nazev = $_POST['nazev'];
+        $isbn = $_POST['isbn'];
+        $autori = $_POST['autor'];
+        $vydavatel = $_POST['vydavatel'];
+        $zanry = $_POST['zanr'];
+        $rok = $_POST['rok'];
+        $pocet = $_POST['pocet'];
 
-    $stmtGenre = $conn->prepare("INSERT INTO kniha_zanr (kniha_id, zanr_id) VALUES (?, ?)");
-    foreach ($zanry as $zanr_id) {
-        $stmtGenre->bind_param("ii", $kniha_id, $zanr_id);
-        $stmtGenre->execute();
+        $stmtBook = $conn->prepare("INSERT INTO kniha (kniha_nazev, kniha_isbn, kniha_vydavatel, kniha_rok, kniha_pocet) VALUES (?, ?, ?, ?, ?)");
+        $stmtBook->bind_param("sssis", $nazev, $isbn, $vydavatel, $rok, $pocet);
+        $stmtBook->execute();
+
+        $kniha_id = $conn->insert_id;
+
+        $stmtAuthor = $conn->prepare("INSERT INTO kniha_autor (kniha_id, autor_id) VALUES (?, ?)");
+        foreach ($autori as $autor_id) {
+            $stmtAuthor->bind_param("ii", $kniha_id, $autor_id);
+            $stmtAuthor->execute();
+        }
+
+        $stmtGenre = $conn->prepare("INSERT INTO kniha_zanr (kniha_id, zanr_id) VALUES (?, ?)");
+        foreach ($zanry as $zanr_id) {
+            $stmtGenre->bind_param("ii", $kniha_id, $zanr_id);
+            $stmtGenre->execute();
+        }
+
+        $stmtBook->close();
+        $stmtAuthor->close();
+        $stmtGenre->close();
+
+        header("Location: " . $_SERVER['REQUEST_URI']);
+        exit;
     }
-
-    $stmtBook->close();
-    $stmtAuthor->close();
-    $stmtGenre->close();
-
-    header("Location: " . $_SERVER['REQUEST_URI']);
-    exit;
 }
 
 ?>
@@ -120,7 +126,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </header>
     <main>
         <div class="container">
-        <form class="row mb-4" method="POST" action="index.php">
+        <form class="row mb-4" method="get" action="index.php">
             <div class="col-3">
                 <label for="search" class="mt-3 form-label">Slovo</label>
                 <input type="text" class="form-control" id="search" name="search">
@@ -197,8 +203,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <option value="<?= $row['zanr_id'] ?>"><?= $row['zanr_nazev'] ?></option>
                                 <?php endwhile; ?>
                             </select></td>
-                            <td><input type="number" class="form-control" id="rok" name="rok"></td>
-                            <td><input type="number" class="form-control" id="pocet" name="pocet"></td>
+                            <td><input type="number" class="form-control" id="rok" name="rok" min="1"></td>
+                            <td><input type="number" class="form-control" id="pocet" name="pocet" min="1"></td>
                         </tr>
                     </tbody>
                 </table>
@@ -207,6 +213,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
                 </form>
             <?php
+            if (!empty($message)) {
+                echo "<p>$message</p>";
+            }
             } else {
                 echo "<p>Žádné knihy nebyly nalezeny.</p>";
             }
