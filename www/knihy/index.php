@@ -46,6 +46,54 @@ $sql = "SELECT
         ORDER BY $orderBy $orderDir";
 
 $result = $conn->query($sql);
+
+$authorsResult = $conn->query("SELECT autor_id, autor_jmeno, autor_prijmeni FROM autor");
+
+if (!$authorsResult) {
+    die('Error: ' . $conn->error);
+}
+
+$genresResult = $conn->query("SELECT zanr_id, zanr_nazev FROM zanr");
+
+if (!$genresResult) {
+    die('Error: ' . $conn->error);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $nazev = $_POST['nazev'];
+    $isbn = $_POST['isbn'];
+    $autori = $_POST['autor'];
+    $vydavatel = $_POST['vydavatel'];
+    $zanry = $_POST['zanr'];
+    $rok = $_POST['rok'];
+    $pocet = $_POST['pocet'];
+
+    $stmtBook = $conn->prepare("INSERT INTO kniha (kniha_nazev, kniha_isbn, kniha_vydavatel, kniha_rok, kniha_pocet) VALUES (?, ?, ?, ?, ?)");
+    $stmtBook->bind_param("sssis", $nazev, $isbn, $vydavatel, $rok, $pocet);
+    $stmtBook->execute();
+
+    $kniha_id = $conn->insert_id;
+
+    $stmtAuthor = $conn->prepare("INSERT INTO kniha_autor (kniha_id, autor_id) VALUES (?, ?)");
+    foreach ($autori as $autor_id) {
+        $stmtAuthor->bind_param("ii", $kniha_id, $autor_id);
+        $stmtAuthor->execute();
+    }
+
+    $stmtGenre = $conn->prepare("INSERT INTO kniha_zanr (kniha_id, zanr_id) VALUES (?, ?)");
+    foreach ($zanry as $zanr_id) {
+        $stmtGenre->bind_param("ii", $kniha_id, $zanr_id);
+        $stmtGenre->execute();
+    }
+
+    $stmtBook->close();
+    $stmtAuthor->close();
+    $stmtGenre->close();
+
+    header("Location: " . $_SERVER['REQUEST_URI']);
+    exit;
+}
+
 ?>
 
 <!doctype html>
@@ -57,6 +105,8 @@ $result = $conn->query($sql);
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" href="style/style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 </head>
 
 <body>
@@ -93,7 +143,7 @@ $result = $conn->query($sql);
             <?php
             if ($result->num_rows > 0) {
                 ?>
-                <form> 
+                <form method="post"> 
                 <table class="table table-striped table-hover">
                     <thead>
                         <tr>
@@ -106,7 +156,7 @@ $result = $conn->query($sql);
                             <th><a href="?orderBy=kniha_vydavatel&orderDir=<?=$orderDir?>">Vydavatel</a></th>
                             <th><a href="?orderBy=zanry&orderDir=<?=$orderDir?>">Žánry</a></th>
                             <th class="col-1"><a href="?orderBy=kniha_rok&orderDir=<?=$orderDir?>">Rok vydání</a></th>
-                            <th class="col-1"><a href="?orderBy=kniha_pocet&orderDir=<?=$orderDir?>">Počet</a></th>
+                            <th class="col-1"><a href="?orderBy=kniha_pocet&orderDir=<?=$orderDir?>">Počet stran</a></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -135,12 +185,20 @@ $result = $conn->query($sql);
                     ?>
                         <tr>      
                             <td><input type="text" class="form-control" id="nazev" name="nazev"></td>
-                            <td><input type="text" class="form-control" id="nazev" name="nazev"></td>
-                            <td><input type="text" class="form-control" id="nazev" name="nazev"></td>
-                            <td><input type="text" class="form-control" id="nazev" name="nazev"></td>
-                            <td><input type="text" class="form-control" id="nazev" name="nazev"></td>
-                            <td><input type="number" class="form-control" id="nazev" name="nazev"></td>
-                            <td><input type="number" class="form-control" id="nazev" name="nazev"></td>
+                            <td><input type="text" class="form-control" id="isbn" name="isbn"></td>
+                            <td><select class="form-select multiple-select" name="autor[]" multiple>
+                                <?php while ($row = $authorsResult->fetch_assoc()): ?>
+                                    <option value="<?= $row['autor_id'] ?>"><?= $row['autor_jmeno'] . ' ' . $row['autor_prijmeni'] ?></option>
+                                <?php endwhile; ?>
+                            </select></td>
+                            <td><input type="text" class="form-control" id="vydavatel" name="vydavatel"></td>
+                            <td><select class="form-select multiple-select" name="zanr[]" multiple>
+                                <?php while ($row = $genresResult->fetch_assoc()): ?>
+                                    <option value="<?= $row['zanr_id'] ?>"><?= $row['zanr_nazev'] ?></option>
+                                <?php endwhile; ?>
+                            </select></td>
+                            <td><input type="number" class="form-control" id="rok" name="rok"></td>
+                            <td><input type="number" class="form-control" id="pocet" name="pocet"></td>
                         </tr>
                     </tbody>
                 </table>
@@ -162,6 +220,16 @@ $result = $conn->query($sql);
         <p>Školní projekt v rámci předmětu Databázové systémy II | © Ondřej Marek</p>
     </footer>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.0/dist/jquery.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $( '.multiple-select' ).select2( {
+    theme: "bootstrap-5",
+    width: $( this ).data( 'width' ) ? $( this ).data( 'width' ) : $( this ).hasClass( 'w-100' ) ? '100%' : 'style',
+    placeholder: $( this ).data( 'placeholder' ),
+    closeOnSelect: false,
+} );
+</script>
 
 </html>
