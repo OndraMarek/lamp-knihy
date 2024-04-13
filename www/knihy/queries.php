@@ -19,7 +19,11 @@ function getBooks($conn, $searchBy, $search, $orderBy, $orderDir) {
             LEFT JOIN 
                 zanr z ON kz.zanr_id = z.zanr_id 
             WHERE 
-                $searchBy LIKE '%$search%'
+                k.kniha_id IN (
+                    SELECT kz1.kniha_id FROM kniha_zanr kz1
+                    JOIN zanr z1 ON kz1.zanr_id = z1.zanr_id
+                    WHERE $searchBy LIKE '%$search%'
+                )
             GROUP BY 
                 k.kniha_id 
             ORDER BY $orderBy $orderDir";
