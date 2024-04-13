@@ -5,8 +5,7 @@ function getBooks($conn, $searchBy, $search, $orderBy, $orderDir) {
                 k.kniha_isbn, 
                 k.kniha_rok, 
                 k.kniha_vydavatel, 
-                k.kniha_pocet, 
-                k.kniha_popis,
+                k.kniha_pocet,
                 GROUP_CONCAT(DISTINCT CONCAT(a.autor_jmeno, ' ', a.autor_prijmeni) SEPARATOR ', ') AS autori, 
                 GROUP_CONCAT(DISTINCT z.zanr_nazev SEPARATOR ', ') AS zanry 
             FROM 

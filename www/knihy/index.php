@@ -86,12 +86,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="container">
         <form class="row mb-4" method="get" action="index.php">
             <div class="col-3">
-                <label for="search" class="mt-3 form-label">Slovo</label>
+                <label for="search" class="mt-3 form-label">Vyhledávání:</label>
                 <input type="text" class="form-control" id="search" name="search">
             </div>
             <div class="col-3">
-                <label for="search" class="mt-3 form-label">Hleda podle</label>
-                <select class="form-select" name="searchBy">
+                <select class="mt-5 form-select" name="searchBy">
                     <option value="kniha_nazev">Název knihy</option>
                     <option value="kniha_isbn">ISBN</option>
                     <option value="autor_jmeno||autor_prijmeni">Autoři</option>
@@ -131,7 +130,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $rok = $row["kniha_rok"];
                     $vydavatel = $row["kniha_vydavatel"];
                     $pocet = $row["kniha_pocet"];
-                    $popis = $row["kniha_popis"];
                     $autori = $row["autori"];
                     $zanry = $row["zanry"];
                 ?>
