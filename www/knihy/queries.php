@@ -10,13 +10,13 @@ function getBooks($conn, $searchBy, $search, $orderBy, $orderDir) {
                 GROUP_CONCAT(DISTINCT z.zanr_nazev SEPARATOR ', ') AS zanry 
             FROM 
                 kniha k 
-            LEFT JOIN 
+            INNER JOIN 
                 kniha_autor ka ON k.kniha_id = ka.kniha_id 
-            LEFT JOIN 
+            INNER JOIN 
                 autor a ON ka.autor_id = a.autor_id 
-            LEFT JOIN 
+            INNER JOIN 
                 kniha_zanr kz ON k.kniha_id = kz.kniha_id 
-            LEFT JOIN 
+            INNER JOIN 
                 zanr z ON kz.zanr_id = z.zanr_id 
             WHERE 
                 k.kniha_id IN (
